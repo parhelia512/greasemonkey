@@ -21,6 +21,7 @@ Cu.import('chrome://greasemonkey-modules/content/util.js');
 var gScope = this;
 var gScriptRunners = {};
 var gStripUserPassRegexp = new RegExp('(://)([^:/]+)(:[^@/]+)?@');
+var gAboutBlank = new RegExp('^about:blank');
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ //
 
@@ -111,11 +112,19 @@ function ContentObserver() {
 ContentObserver.prototype.QueryInterface = XPCOMUtils.generateQI([
     Ci.nsIObserver]);
 
-
-ContentObserver.prototype.blankLoad = function(aEvent) {
+// #1696: content-document-global-created sees about:blank, but:
+// aSubject.document.documentURI = 'about:blank'
+// aData = null
+ContentObserver.prototype.blankLoadStart = function(aEvent) {
   var contentWin = aEvent.target.defaultView;
-  if (contentWin.location.href.match(/^about:blank/)) {
-    // #1696: document-element-inserted doesn't see about:blank
+  if (contentWin.location.href.match(gAboutBlank)) {
+    this.runScripts('document-start', contentWin);
+  }
+};
+
+ContentObserver.prototype.blankLoadEnd = function(aEvent) {
+  var contentWin = aEvent.target.defaultView;
+  if (contentWin.location.href.match(gAboutBlank)) {
     this.runScripts('document-end', contentWin);
   }
 };
@@ -160,16 +169,15 @@ ContentObserver.prototype.observe = function(aSubject, aTopic, aData) {
   if (!GM_util.getEnabled()) return;
 
   switch (aTopic) {
-    case 'document-element-inserted':
+    case 'content-document-global-created':
       if (!GM_util.getEnabled()) return;
 
-      var doc = aSubject;
-      var win = doc && doc.defaultView;
-      if (!doc || !win) return;
+      var win = aSubject;
+      var origin = aData;
+      if (!win || !origin || origin == 'null') return;
       if (win.top !== content) return;
 
-      var url = doc.documentURI;
-      if (!GM_util.isGreasemonkeyable(url)) return;
+      if (!GM_util.isGreasemonkeyable(origin)) return;
 
       // Listen for whichever kind of load event arrives first.
       win.addEventListener('DOMContentLoaded', gContentLoad, true);
@@ -287,7 +295,9 @@ var contentObserver = new ContentObserver();
 var gContentLoad = contentObserver.contentLoad.bind(contentObserver);
 
 addEventListener(
-    'DOMContentLoaded', contentObserver.blankLoad.bind(contentObserver));
+    'DOMWindowCreated', contentObserver.blankLoadStart.bind(contentObserver));
+addEventListener(
+    'DOMContentLoaded', contentObserver.blankLoadEnd.bind(contentObserver));
 
 addEventListener('pagehide', contentObserver.pagehide.bind(contentObserver));
 addEventListener('pageshow', contentObserver.pageshow.bind(contentObserver));
@@ -295,13 +305,15 @@ addEventListener('pageshow', contentObserver.pageshow.bind(contentObserver));
 addMessageListener('greasemonkey:inject-script',
     contentObserver.runDelayedScript.bind(contentObserver));
 addMessageListener('greasemonkey:load-failed-script',
-  contentObserver.loadFailedScript.bind(contentObserver));
+    contentObserver.loadFailedScript.bind(contentObserver));
 addMessageListener('greasemonkey:menu-command-clicked',
     contentObserver.runMenuCommand.bind(contentObserver));
 
-Services.obs.addObserver(contentObserver, 'document-element-inserted', false);
+Services.obs.addObserver(contentObserver,
+    'content-document-global-created', false);
 addEventListener('unload', function() {
-  Services.obs.removeObserver(contentObserver, 'document-element-inserted');
+  Services.obs.removeObserver(contentObserver,
+    'content-document-global-created');
 }, false);
 
 (function() {
