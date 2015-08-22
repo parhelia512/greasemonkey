@@ -313,7 +313,7 @@ Services.obs.addObserver(contentObserver,
     'content-document-global-created', false);
 addEventListener('unload', function() {
   Services.obs.removeObserver(contentObserver,
-    'content-document-global-created');
+      'content-document-global-created');
 }, false);
 
 (function() {
