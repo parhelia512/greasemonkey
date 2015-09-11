@@ -21,7 +21,7 @@ Cu.import('chrome://greasemonkey-modules/content/util.js');
 var gScope = this;
 var gScriptRunners = {};
 var gStripUserPassRegexp = new RegExp('(://)([^:/]+)(:[^@/]+)?@');
-var gAboutBlank = new RegExp('^about:blank');
+var gAboutBlank = new RegExp("^about:blank");
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ //
 
@@ -113,19 +113,19 @@ ContentObserver.prototype.QueryInterface = XPCOMUtils.generateQI([
     Ci.nsIObserver]);
 
 // #1696: content-document-global-created sees about:blank, but:
-// aSubject.document.documentURI = 'about:blank'
+// aSubject.document.documentURI = "about:blank"
 // aData = null
 ContentObserver.prototype.blankLoadStart = function(aEvent) {
   var contentWin = aEvent.target.defaultView;
   if (contentWin.location.href.match(gAboutBlank)) {
-    this.runScripts('document-start', contentWin);
+    this.runScripts("document-start", contentWin);
   }
 };
 
 ContentObserver.prototype.blankLoadEnd = function(aEvent) {
   var contentWin = aEvent.target.defaultView;
   if (contentWin.location.href.match(gAboutBlank)) {
-    this.runScripts('document-end', contentWin);
+    this.runScripts("document-end", contentWin);
   }
 };
 
@@ -169,12 +169,12 @@ ContentObserver.prototype.observe = function(aSubject, aTopic, aData) {
   if (!GM_util.getEnabled()) return;
 
   switch (aTopic) {
-    case 'content-document-global-created':
+    case "content-document-global-created":
       if (!GM_util.getEnabled()) return;
 
       var win = aSubject;
       var origin = aData;
-      if (!win || !origin || origin == 'null') return;
+      if (!win || !origin || origin == "null") return;
       if (win.top !== content) return;
 
       if (!GM_util.isGreasemonkeyable(origin)) return;
@@ -295,9 +295,9 @@ var contentObserver = new ContentObserver();
 var gContentLoad = contentObserver.contentLoad.bind(contentObserver);
 
 addEventListener(
-    'DOMWindowCreated', contentObserver.blankLoadStart.bind(contentObserver));
+    "DOMWindowCreated", contentObserver.blankLoadStart.bind(contentObserver));
 addEventListener(
-    'DOMContentLoaded', contentObserver.blankLoadEnd.bind(contentObserver));
+    "DOMContentLoaded", contentObserver.blankLoadEnd.bind(contentObserver));
 
 addEventListener('pagehide', contentObserver.pagehide.bind(contentObserver));
 addEventListener('pageshow', contentObserver.pageshow.bind(contentObserver));
@@ -310,10 +310,10 @@ addMessageListener('greasemonkey:menu-command-clicked',
     contentObserver.runMenuCommand.bind(contentObserver));
 
 Services.obs.addObserver(contentObserver,
-    'content-document-global-created', false);
+    "content-document-global-created", false);
 addEventListener('unload', function() {
   Services.obs.removeObserver(contentObserver,
-      'content-document-global-created');
+      "content-document-global-created");
 }, false);
 
 (function() {
