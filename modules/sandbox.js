@@ -183,7 +183,7 @@ function injectGMInfo(aScript, sandbox, aContentWin) {
 }
 
 
-function runScriptInSandbox(script, sandbox) {
+function runScriptInSandbox(script, contentWin, sandbox) {
   // Eval the code, with anonymous wrappers when/if appropriate.
   function evalWithWrapper(url) {
     try {
@@ -204,7 +204,9 @@ function runScriptInSandbox(script, sandbox) {
             '(function(){ '+code+'\n})()', sandbox, gMaxJSVersion, url, 1);
       } else {
         // Otherwise raise.
-        throw e;
+        // throw e;
+        throw new contentWin.Error(
+            e.message, e.fileName, e.lineNumber);
       }
     }
   }

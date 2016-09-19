@@ -116,7 +116,7 @@ function injectScripts(aScripts, aContentWin) {
   for (var i = 0, script = null; script = aScripts[i]; i++) {
     if (script.noframes && !winIsTop) continue;
     var sandbox = createSandbox(script, aContentWin, url, gScope);
-    runScriptInSandbox(script, sandbox);
+    runScriptInSandbox(script, aContentWin, sandbox);
   }
 }
 
