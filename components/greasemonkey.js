@@ -101,6 +101,7 @@ function startup(aService) {
   }});
 
   Cu.import("chrome://greasemonkey-modules/content/requestObserver.js", {});
+  Cu.import("chrome://greasemonkey-modules/content/responseObserver.js", {});
 
   Services.obs.addObserver(aService, 'quit-application', false);
 
